@@ -1,4 +1,4 @@
-# Claude Desktop MCP Configuration Guide
+# NANDA MCP Configuration Guide
 
 ## Overview
 
