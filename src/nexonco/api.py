@@ -167,23 +167,6 @@ class CivicAPIClient:
 
         df = pd.DataFrame(data)
         df = df.dropna(subset=["evidence_rating"])
-        """        
-
-        unique_desc_df = df.drop_duplicates(subset="description", keep="last")
-        unique_ids = unique_desc_df["id"].tolist()
-        unique_descs = unique_desc_df["description"].tolist()
-
-        sources = self.get_sources(unique_ids)
-
-        citation_map = {
-            unique_descs[i]: sources[i]["citation"] for i in range(len(sources))
-        }
-        df["citation"] = df["description"].map(citation_map)
-
-        url_map = {
-            unique_descs[i]: sources[i]["sourceUrl"] for i in range(len(sources))
-        }
-        df["sourceUrl"] = df["description"].map(url_map)"""
 
         return df
 
