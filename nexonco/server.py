@@ -14,7 +14,7 @@ from starlette.routing import Mount, Route
 
 from api import CivicAPIClient
 
-API_VERSION = "0.1.3"
+API_VERSION = "0.1.4"
 BUILD_TIMESTAMP = "2025-04-13"
 
 mcp = FastMCP(
@@ -548,6 +548,9 @@ async def homepage(request: Request) -> HTMLResponse:
             <div class="container">
                 Clinical Evidence Data Analysis for Precision Oncology
             </div>
+            <br>
+            <img src="http://nanda-registry.com/api/v1/verification/badge/c6284608-6bce-4417-a170-da6c1a117616" alt="Verified NANDA MCP Server" />
+            <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="MIT License" />
         </div>
     </header>
 

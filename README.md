@@ -3,7 +3,7 @@
 <div class="title-block" style="text-align: center;" align="center">
     <b>Nexonco</b> by <a href="https://www.nexgene.ai">Nexgene Research</a> is an <a href="https://github.com/modelcontextprotocol">MCP</a> server for accessing clinical evidence from the CIViC (Clinical Interpretation of Variants in Cancer) database. It enables fast, flexible search across variants, diseases, drugs, and phenotypes to support precision oncology.
 </div>
-
+<br>
 <div class="title-block" style="text-align: center;" align="center">
     <img src="http://nanda-registry.com/api/v1/verification/badge/c6284608-6bce-4417-a170-da6c1a117616" alt="Verified NANDA MCP Server" />
     <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="MIT License" />
