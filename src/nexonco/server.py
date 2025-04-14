@@ -12,10 +12,10 @@ from starlette.requests import Request
 from starlette.responses import HTMLResponse, JSONResponse
 from starlette.routing import Mount, Route
 
-from api import CivicAPIClient
+from .api import CivicAPIClient
 
-API_VERSION = "0.1.5"
-BUILD_TIMESTAMP = "2025-04-13"
+API_VERSION = "0.1.8"
+BUILD_TIMESTAMP = "2025-04-15"
 
 mcp = FastMCP(
     name="nexonco",
@@ -779,7 +779,7 @@ def create_starlette_app(mcp_server: Server, *, debug: bool = False) -> Starlett
     )
 
 
-if __name__ == "__main__":
+def main():
     import argparse
 
     # Parse command-line arguments
@@ -802,3 +802,7 @@ if __name__ == "__main__":
         uvicorn.run(starlette_app, host=args.host, port=args.port)
     else:
         mcp.run(transport="stdio")
+
+
+if __name__ == "__main__":
+    main()

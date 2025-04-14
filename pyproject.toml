@@ -1,6 +1,6 @@
 [project]
 name = "nexonco-mcp"
-version = "0.1.5"
+version = "0.1.8"
 description = "An advanced MCP Server for accessing and analyzing clinical evidence data, with flexible search options to support precision medicine and oncology research."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -11,3 +11,6 @@ dependencies = [
     "starlette>=0.46.1",
     "uvicorn>=0.34.0",
 ]
+
+[project.scripts]
+nexonco = "nexonco.server:main"

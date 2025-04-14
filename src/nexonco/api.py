@@ -3,7 +3,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import pandas as pd
 import requests
 
-from query import (
+from .query import (
     BROWSE_PHENOTYPES_QUERY,
     EVIDENCE_BROWSE_QUERY,
     EVIDENCE_SUMMARY_QUERY,
