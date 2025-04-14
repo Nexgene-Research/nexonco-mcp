@@ -8,8 +8,8 @@ This guide explains how to configure [NANDA, The Internet of Agents](https://nan
 
 ### Prerequisites
 
-- [uv](https://github.com/astral-sh/uv) (for Method 1)
-- Docker (for Method 2)
+- Docker (for Method 1)
+- [uv](https://github.com/astral-sh/uv#installation) (for Method 2)
 
 ### 1. Download or clone the `nexonco-mcp` GitHub repository
 
@@ -33,10 +33,10 @@ This guide explains how to configure [NANDA, The Internet of Agents](https://nan
    
 #### <b>Method 2</b>: Run with `uv` 
 
-> Requires: [`uv`](https://github.com/astral-sh/uv)
+> Requires: [`uv`](https://github.com/astral-sh/uv#installation)
 
 ```bash
-uv run nexonco/server.py --transport sse
+uv run --with nexonco-mcp nexonco --transport sse
 ```
 
 ### 3. Register `Nexonco` Server to NANDA-Host
