@@ -8,13 +8,10 @@ This guide explains how to configure Claude Desktop to use the Nexonco MCP serve
 
 ### Prerequisites
 
-- [uv](https://github.com/astral-sh/uv) 
-- Python 3.11+
+- [uv](https://github.com/astral-sh/uv#installation)
 - Claude Desktop (for MCP integration)
 
-### 1. Download or clone the `nexonco-mcp` GitHub repository
-
-### 2. Locate Configuration File
+### 1. Locate Configuration File
 
 The configuration file location depends on your operating system:
 
@@ -33,7 +30,7 @@ The configuration file location depends on your operating system:
   ~/.config/Claude/claude_desktop_config.json
   ```
 
-### 3. Edit Configuration
+### 2. Edit Configuration
 
 1. Open the configuration file in a text editor
 2. Add or update the mcpServers section:
@@ -43,18 +40,14 @@ The configuration file location depends on your operating system:
   "mcpServers": {
     "nexonco": {
         "command": "uv",
-        "args": [
-            "--directory",
-            "/full/path/to/nexonco/nexonco",
-            "run",
-            "server.py"
+        "args": ["run", "--with", "nexonco-mcp", "nexonco"
         ]
     }
   }
 }
 ```
 
-### 4. Verify Setup
+### 3. Verify Setup
 
 1. Save the configuration file
 2. Restart Claude Desktop completely
