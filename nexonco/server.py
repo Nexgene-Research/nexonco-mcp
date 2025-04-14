@@ -14,7 +14,7 @@ from starlette.routing import Mount, Route
 
 from api import CivicAPIClient
 
-API_VERSION = "0.1.4"
+API_VERSION = "0.1.5"
 BUILD_TIMESTAMP = "2025-04-13"
 
 mcp = FastMCP(
