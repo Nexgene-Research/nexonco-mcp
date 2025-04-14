@@ -1,11 +1,10 @@
-![export](assets/nexonco-mcp-banner.jpg)
+![export](https://hebbkx1anhila5yf.public.blob.vercel-storage.com/nexonco-mcp-banner.jpg-eU6zlp05WgYM4EObepfIQD9SasLx8g.jpeg)
 
 <div class="title-block" style="text-align: center;" align="center">
     <b>Nexonco</b> by <a href="https://www.nexgene.ai">Nexgene Research</a> is an <a href="https://github.com/modelcontextprotocol">MCP</a> server for accessing clinical evidence from the CIViC (Clinical Interpretation of Variants in Cancer) database. It enables fast, flexible search across variants, diseases, drugs, and phenotypes to support precision oncology.
 </div>
 <br>
 <div class="title-block" style="text-align: center;" align="center">
-    <img src="http://nanda-registry.com/api/v1/verification/badge/c6284608-6bce-4417-a170-da6c1a117616" alt="Verified NANDA MCP Server" />
     <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="MIT License" />
 </div>
 
@@ -13,7 +12,7 @@
 
 ### Prerequisites
 
-- [uv](https://github.com/astral-sh/uv) or Docker 
+- [uv](https://github.com/astral-sh/uv#installation) or Docker 
 - Claude Desktop (for MCP integration)
 
 ### Setup Guides
