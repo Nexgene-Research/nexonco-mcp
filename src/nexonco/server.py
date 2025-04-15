@@ -542,7 +542,7 @@ async def homepage(request: Request) -> HTMLResponse:
 <body>
     <header>
         <div class="banner-container">
-            <img src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/nexonco-mcp-banner.jpg-eU6zlp05WgYM4EObepfIQD9SasLx8g.jpeg" alt="Nexonco MCP Banner" class="banner">
+            <img src="https://github.com/user-attachments/assets/c2ec59e8-ff8c-40e1-b66d-17998fe67ecf" alt="Nexonco MCP Banner" class="banner">
         </div>
         <div class="subtitle">
             <div class="container">
