@@ -1,4 +1,4 @@
-![export](https://hebbkx1anhila5yf.public.blob.vercel-storage.com/nexonco-mcp-banner.jpg-eU6zlp05WgYM4EObepfIQD9SasLx8g.jpeg)
+![nexonco-mcp-banner](https://github.com/user-attachments/assets/c2ec59e8-ff8c-40e1-b66d-17998fe67ecf)
 
 <div class="title-block" style="text-align: center;" align="center">
     <b>Nexonco</b> by <a href="https://www.nexgene.ai">Nexgene Research</a> is an <a href="https://github.com/modelcontextprotocol">MCP</a> server for accessing clinical evidence from the CIViC (Clinical Interpretation of Variants in Cancer) database. It enables fast, flexible search across variants, diseases, drugs, and phenotypes to support precision oncology.
@@ -11,6 +11,12 @@
   [![NANDA](https://img.shields.io/badge/NANDA-Nexonco-000000.svg?style=for-the-badge&logo=&labelColor=000)](https://ui.nanda-registry.com/servers/c6284608-6bce-4417-a170-da6c1a117616)
   [![License](https://img.shields.io/badge/License-MIT-000000.svg?style=for-the-badge&logo=github&labelColor=000)](https://github.com/Nexgene-Research/nexonco-mcp/blob/main/LICENSE)
 </div>
+
+## Demo
+
+https://github.com/user-attachments/assets/02129685-5ba5-4b90-89e7-9d4a39986210
+
+Watch full video here: [![Youtube](https://img.shields.io/badge/YouTube-red)](https://youtu.be/1Mq8Hcb9V7o?si=jCbhqNabupaRiQWq)
 
 ## Setup
 
