@@ -4,8 +4,12 @@
     <b>Nexonco</b> by <a href="https://www.nexgene.ai">Nexgene Research</a> is an <a href="https://github.com/modelcontextprotocol">MCP</a> server for accessing clinical evidence from the CIViC (Clinical Interpretation of Variants in Cancer) database. It enables fast, flexible search across variants, diseases, drugs, and phenotypes to support precision oncology.
 </div>
 <br>
+
 <div class="title-block" style="text-align: center;" align="center">
-    <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="MIT License" />
+
+  [![PyPI](https://img.shields.io/badge/PyPI-nexonco--mcp-000000.svg?style=for-the-badge&logo=pypi&labelColor=000)](https://pypi.org/project/nexonco-mcp) 
+  [![NANDA](https://img.shields.io/badge/NANDA-Nexonco-000000.svg?style=for-the-badge&logo=&labelColor=000)](https://ui.nanda-registry.com/servers/c6284608-6bce-4417-a170-da6c1a117616)
+  [![License](https://img.shields.io/badge/License-MIT-000000.svg?style=for-the-badge&logo=github&labelColor=000)](https://github.com/Nexgene-Research/nexonco-mcp/blob/main/LICENSE)
 </div>
 
 ## Setup
@@ -70,12 +74,12 @@ The tool returns a formatted string with four sections:
 
 ## License
 
-This project is licensed under the MIT License - see the <a href="LICENSE">LICENSE</a> file for details.
+This project is licensed under the MIT License - see the <a href="https://github.com/Nexgene-Research/nexonco-mcp/blob/main/LICENSE">LICENSE</a> file for details.
 
 ## Disclaimer
 
 ⚠️ This tool is intended exclusively for research purposes. It is not a substitute for professional medical advice, diagnosis, or treatment.
 
 ## Contributors 
-- Obada Qasem (@obadaqasem)
-- Kutsal Ozkurt (@Goodsea)
+- Obada Qasem (@obadaqasem), [Nexgene AI](https://www.nexgene.ai)
+- Kutsal Ozkurt (@Goodsea), [Nexgene AI](https://www.nexgene.ai)
