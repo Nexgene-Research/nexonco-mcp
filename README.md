@@ -8,7 +8,7 @@
 <div class="title-block" style="text-align: center;" align="center">
 
   [![PyPI](https://img.shields.io/badge/PyPI-nexonco--mcp-000000.svg?style=for-the-badge&logo=pypi&labelColor=000)](https://pypi.org/project/nexonco-mcp) 
-  [![NANDA](https://img.shields.io/badge/NANDA-Nexonco-000000.svg?style=for-the-badge&logo=&labelColor=000)](https://ui.nanda-registry.com/servers/c6284608-6bce-4417-a170-da6c1a117616)
+  [![NANDA](https://img.shields.io/badge/NANDA-Nexonco-000000.svg?style=for-the-badge&logo=&labelColor=000)](https://github.com/aidecentralized/nanda-servers/tree/main/nexonco-mcp)
   [![License](https://img.shields.io/badge/License-MIT-000000.svg?style=for-the-badge&logo=github&labelColor=000)](https://github.com/Nexgene-Research/nexonco-mcp/blob/main/LICENSE)
 </div>
 
