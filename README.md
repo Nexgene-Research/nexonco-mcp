@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/nexgene-research-nexonco-mcp-badge.png)](https://mseep.ai/app/nexgene-research-nexonco-mcp)
+
 ![nexonco-mcp-banner](https://github.com/user-attachments/assets/c2ec59e8-ff8c-40e1-b66d-17998fe67ecf)
 
 <div class="title-block" style="text-align: center;" align="center">
