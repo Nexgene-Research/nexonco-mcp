@@ -138,29 +138,61 @@ class CivicAPIClient:
             if filter_strong_evidence and entry["evidenceRating"] <= 3:
                 continue
 
+            # Safely parse all nested fields with None checks
+
+            # Disease fields
+            disease = result.get("disease")
+            disease_id = disease.get("id") if disease else None
+            disease_name = disease.get("name") if disease else None
+
+            # Therapy fields
+            therapies = result.get("therapies", [])
+            therapy_ids = "+".join([str(t.get("id", "")) for t in therapies if t]) if therapies else None
+            therapy_names = "+".join([t.get("name", "") for t in therapies if t]) if therapies else None
+
+            # Molecular profile fields
+            mol_profile = result.get("molecularProfile")
+            mol_profile_id = mol_profile.get("id") if mol_profile else None
+            mol_profile_name = mol_profile.get("name") if mol_profile else None
+
+            # Gene and variant from parsedName
+            gene_id = None
+            gene_name = None
+            variant_id = None
+            variant_name = None
+
+            if mol_profile:
+                parsed_name = mol_profile.get("parsedName", [])
+                if parsed_name and len(parsed_name) > 0:
+                    # First element is usually the gene
+                    if isinstance(parsed_name[0], dict) and "id" in parsed_name[0]:
+                        gene_id = parsed_name[0].get("id")
+                        gene_name = parsed_name[0].get("name")
+
+                    # Second element is usually the variant
+                    if len(parsed_name) > 1 and isinstance(parsed_name[1], dict) and "id" in parsed_name[1]:
+                        variant_id = parsed_name[1].get("id")
+                        variant_name = parsed_name[1].get("name")
+
             evidence = {
-                "id": result["id"],
-                "name": result["name"],
-                "disease_id": result["disease"]["id"],
-                "disease_name": result["disease"]["name"],
-                "therapy_ids": "+".join(
-                    [str(therapy["id"]) for therapy in result["therapies"]]
-                ),
-                "therapy_names": "+".join(
-                    [therapy["name"] for therapy in result["therapies"]]
-                ),
-                "molecular_profile_id": result["molecularProfile"]["id"],
-                "molecular_profile_name": result["molecularProfile"]["name"],
-                "gene_id": result["molecularProfile"]["parsedName"][0]["id"],
-                "gene_name": result["molecularProfile"]["parsedName"][0]["name"],
-                "variant_id": result["molecularProfile"]["parsedName"][1]["id"],
-                "variant_name": result["molecularProfile"]["parsedName"][1]["name"],
-                "phenotype_id": phenotype_data["id"],
-                "phenotype_name": phenotype_data["name"],
-                "description": result["description"],
-                "evidence_type": result["evidenceType"],
-                "evidence_direction": result["evidenceDirection"],
-                "evidence_rating": result["evidenceRating"],
+                "id": result.get("id"),
+                "name": result.get("name"),
+                "disease_id": disease_id,
+                "disease_name": disease_name,
+                "therapy_ids": therapy_ids,
+                "therapy_names": therapy_names,
+                "molecular_profile_id": mol_profile_id,
+                "molecular_profile_name": mol_profile_name,
+                "gene_id": gene_id,
+                "gene_name": gene_name,
+                "variant_id": variant_id,
+                "variant_name": variant_name,
+                "phenotype_id": phenotype_data.get("id"),
+                "phenotype_name": phenotype_data.get("name"),
+                "description": result.get("description"),
+                "evidence_type": result.get("evidenceType"),
+                "evidence_direction": result.get("evidenceDirection"),
+                "evidence_rating": result.get("evidenceRating"),
             }
 
             data.append(evidence)
@@ -217,6 +249,103 @@ class CivicAPIClient:
                     )
 
         return results
+
+
+    def search_evidence_batch(
+        self,
+        disease_names=None,
+        therapy_names=None,
+        molecular_profile_names=None,
+        **kwargs,
+    ):
+        """
+        Perform batch searches for multiple diseases, therapies, or molecular profiles.
+
+        This method executes parallel searches when multiple values are provided for any parameter,
+        aggregates results, and returns a combined DataFrame.
+
+        Args:
+            disease_names (list of str, optional): List of disease names to search.
+            therapy_names (list of str, optional): List of therapy names to search.
+            molecular_profile_names (list of str, optional): List of molecular profile names to search.
+            **kwargs: Additional parameters passed to search_evidence (e.g., evidence_type, filter_strong_evidence).
+
+        Returns:
+            dict: Dictionary mapping search parameters to their result DataFrames.
+                  Format: {param_value: DataFrame, ...}
+        """
+        results_by_param = {}
+
+        # Search by diseases
+        if disease_names and isinstance(disease_names, list):
+            for disease in disease_names:
+                df = self.search_evidence(disease_name=disease, **kwargs)
+                results_by_param[f"Disease: {disease}"] = df
+
+        # Search by therapies
+        if therapy_names and isinstance(therapy_names, list):
+            for therapy in therapy_names:
+                df = self.search_evidence(therapy_name=therapy, **kwargs)
+                results_by_param[f"Therapy: {therapy}"] = df
+
+        # Search by molecular profiles
+        if molecular_profile_names and isinstance(molecular_profile_names, list):
+            for profile in molecular_profile_names:
+                df = self.search_evidence(molecular_profile_name=profile, **kwargs)
+                results_by_param[f"Gene/Variant: {profile}"] = df
+
+        return results_by_param
+
+    def compare_therapies_data(
+        self, therapy_names, disease_name=None, molecular_profile_name=None, **kwargs
+    ):
+        """
+        Retrieve evidence data for multiple therapies to enable comparison.
+
+        Args:
+            therapy_names (list of str): List of therapy names to compare.
+            disease_name (str, optional): Disease context for comparison.
+            molecular_profile_name (str, optional): Molecular profile context for comparison.
+            **kwargs: Additional parameters passed to search_evidence.
+
+        Returns:
+            dict: Dictionary mapping therapy names to their evidence DataFrames.
+                  Format: {therapy_name: DataFrame, ...}
+        """
+        therapy_data = {}
+
+        for therapy in therapy_names:
+            df = self.search_evidence(
+                therapy_name=therapy,
+                disease_name=disease_name,
+                molecular_profile_name=molecular_profile_name,
+                **kwargs,
+            )
+            therapy_data[therapy] = df
+
+        return therapy_data
+
+    def analyze_molecular_profile_data(
+        self, molecular_profile_name, disease_name=None, therapy_name=None, **kwargs
+    ):
+        """
+        Retrieve comprehensive evidence data for a specific gene or variant.
+
+        Args:
+            molecular_profile_name (str): Gene or variant name to analyze.
+            disease_name (str, optional): Filter by disease context.
+            therapy_name (str, optional): Filter by therapy context.
+            **kwargs: Additional parameters passed to search_evidence.
+
+        Returns:
+            pd.DataFrame: Comprehensive evidence data for the molecular profile.
+        """
+        return self.search_evidence(
+            molecular_profile_name=molecular_profile_name,
+            disease_name=disease_name,
+            therapy_name=therapy_name,
+            **kwargs,
+        )
 
 
 def example_usage():

@@ -1,5 +1,5 @@
 from collections import Counter
-from typing import Optional
+from typing import List, Optional
 
 import pandas as pd
 import uvicorn
@@ -12,7 +12,25 @@ from starlette.requests import Request
 from starlette.responses import HTMLResponse, JSONResponse
 from starlette.routing import Mount, Route
 
+from .analysis import (
+    analyze_gene_variant_associations,
+    calculate_actionability_score,
+    compare_therapy_evidence,
+    identify_research_gaps,
+)
 from .api import CivicAPIClient
+from .formatters import (
+    format_actionability_score,
+    format_association_analysis,
+    format_comparison_table,
+    format_evidence_type_breakdown,
+    format_evidence_type_distribution,
+    format_gene_variant_overview,
+    format_multi_search_summary,
+    format_recommendation,
+    format_research_gaps,
+    format_top_evidence_entries,
+)
 
 API_VERSION = "0.1.17"
 BUILD_TIMESTAMP = "2025-08-12"
@@ -178,6 +196,404 @@ def search_clinical_evidence(
     )
 
     return final_report
+
+
+@mcp.tool(
+    name="multi_search_clinical_evidence",
+    description=(
+        "Perform multi-parameter searches for clinical evidence across multiple diseases, therapies, "
+        "or molecular profiles simultaneously. This tool enables batch querying to compare evidence "
+        "across different contexts. Results are aggregated and presented with cross-parameter analysis."
+    ),
+)
+def multi_search_clinical_evidence(
+    disease_names: Optional[List[str]] = Field(
+        default=None,
+        description="List of disease names to search for (e.g., ['Lung Cancer', 'Colorectal Cancer']). Optional.",
+    ),
+    therapy_names: Optional[List[str]] = Field(
+        default=None,
+        description="List of therapy names to search for (e.g., ['Cetuximab', 'Panitumumab']). Optional.",
+    ),
+    molecular_profile_names: Optional[List[str]] = Field(
+        default=None,
+        description="List of molecular profiles/genes/variants to search for (e.g., ['KRAS', 'EGFR', 'BRAF V600E']). Optional.",
+    ),
+    evidence_type: Optional[str] = Field(
+        default="",
+        description="Evidence classification to filter all searches: 'PREDICTIVE', 'DIAGNOSTIC', 'PROGNOSTIC', 'PREDISPOSING', or 'FUNCTIONAL'. Optional.",
+    ),
+    filter_strong_evidence: bool = Field(
+        default=False,
+        description="If True, only include evidence with rating > 3 across all searches.",
+    ),
+) -> str:
+    """
+    Perform batch searches across multiple diseases, therapies, or molecular profiles.
+    Returns aggregated results with summary statistics for each search parameter.
+
+    This tool is useful for:
+    - Comparing evidence across multiple diseases
+    - Analyzing multiple gene variants simultaneously
+    - Exploring therapeutic options for related conditions
+
+    Returns:
+        str: Formatted report with results grouped by search parameter, including
+        aggregate statistics and cross-parameter insights.
+    """
+    client = CivicAPIClient()
+
+    # Convert empty strings to None
+    evidence_type = None if evidence_type == "" else evidence_type
+
+    # Ensure at least one parameter list is provided
+    if not any([disease_names, therapy_names, molecular_profile_names]):
+        return "❌ Error: Please provide at least one list of diseases, therapies, or molecular profiles to search."
+
+    # Perform batch search
+    results_by_param = client.search_evidence_batch(
+        disease_names=disease_names,
+        therapy_names=therapy_names,
+        molecular_profile_names=molecular_profile_names,
+        evidence_type=evidence_type,
+        filter_strong_evidence=filter_strong_evidence,
+    )
+
+    if not results_by_param:
+        return "🔍 No search parameters provided or no results found."
+
+    # Check if all results are empty
+    if all(df.empty for df in results_by_param.values()):
+        return "🔍 No evidence found for any of the specified parameters."
+
+    # Generate summary
+    report = format_multi_search_summary(results_by_param)
+
+    # Add detailed results for each parameter
+    report += "---\n\n## **Detailed Results by Parameter**\n\n"
+
+    for param_name, df in results_by_param.items():
+        if df.empty:
+            report += f"### {param_name}\n\nNo evidence found.\n\n"
+            continue
+
+        # Check if DataFrame has required columns
+        if "evidence_rating" not in df.columns:
+            report += f"### {param_name}\n\nData structure error - missing evidence rating.\n\n"
+            continue
+
+        # Statistics for this parameter
+        total_items = len(df)
+        avg_rating = df["evidence_rating"].mean()
+
+        report += f"### {param_name}\n\n"
+        report += f"**Statistics:**\n"
+        report += f"- Total Evidence: {total_items}\n"
+        report += f"- Average Rating: {avg_rating:.2f}/5\n"
+        report += f"- Strong Evidence: {len(df[df['evidence_rating'] > 3])}\n"
+
+        # Top diseases, genes, therapies for this parameter
+        if "disease_name" in df.columns:
+            top_diseases = df["disease_name"].value_counts().head(3)
+            report += f"- Top Diseases: {', '.join(f'{d} ({c})' for d, c in top_diseases.items())}\n"
+
+        if "gene_name" in df.columns:
+            top_genes = df["gene_name"].value_counts().head(3)
+            report += f"- Top Genes: {', '.join(f'{g} ({c})' for g, c in top_genes.items())}\n"
+
+        # Top 3 evidence entries
+        report += "\n**Top 3 Evidence Entries:**\n\n"
+        top_3 = df.sort_values(by="evidence_rating", ascending=False).head(3)
+
+        for idx, (_, row) in enumerate(top_3.iterrows(), 1):
+            report += (
+                f"{idx}. **{row.get('evidence_type', 'N/A')}** | "
+                f"Rating: {row.get('evidence_rating', 'N/A')}/5\n"
+                f"   - Disease: {row.get('disease_name', 'N/A')}\n"
+                f"   - Gene/Variant: {row.get('gene_name', 'N/A')} / {row.get('variant_name', 'N/A')}\n"
+                f"   - Therapy: {row.get('therapy_names', 'N/A')}\n\n"
+            )
+
+        report += "---\n\n"
+
+    # Add cross-parameter analysis
+    all_dfs = [df for df in results_by_param.values() if not df.empty]
+    if len(all_dfs) > 1:
+        try:
+            combined_df = pd.concat(all_dfs, ignore_index=True)
+
+            report += "## **Cross-Parameter Analysis**\n\n"
+
+            # Find genes/variants that appear across multiple search parameters
+            if "gene_name" in combined_df.columns:
+                # Filter out null gene names before grouping
+                combined_clean = combined_df[combined_df["gene_name"].notna()].copy()
+
+                if not combined_clean.empty and "evidence_rating" in combined_clean.columns:
+                    gene_counts = combined_clean.groupby("gene_name", dropna=True)["evidence_rating"].agg(
+                        ["count", "mean"]
+                    )
+                    gene_counts = gene_counts.sort_values("count", ascending=False).head(5)
+
+                    if not gene_counts.empty:
+                        report += "**Most Frequent Genes Across All Searches:**\n"
+                        for gene, row in gene_counts.iterrows():
+                            # Safely access row values
+                            if gene and not pd.isna(gene):
+                                count_val = row.get("count", 0) if hasattr(row, 'get') else row[0]
+                                mean_val = row.get("mean", 0.0) if hasattr(row, 'get') else row[1]
+                                report += f"- {gene}: {int(count_val)} occurrences (avg rating: {mean_val:.2f})\n"
+
+            report += "\n"
+        except Exception as e:
+            report += f"\n⚠️ Cross-parameter analysis could not be completed: {str(e)}\n\n"
+
+    # Disclaimer
+    report += "\n⚠️ **Disclaimer:** This tool is intended exclusively for research purposes. It is not a substitute for professional medical advice, diagnosis, or treatment."
+
+    return report
+
+
+@mcp.tool(
+    name="compare_therapies",
+    description=(
+        "Compare multiple therapies based on clinical evidence for a specific disease or molecular profile context. "
+        "Provides side-by-side comparison of evidence strength, quality, and actionability. "
+        "Returns ranked recommendations based on evidence analysis."
+    ),
+)
+def compare_therapies(
+    therapy_names: List[str] = Field(
+        ...,
+        description="List of therapy names to compare (e.g., ['Cetuximab', 'Panitumumab', 'Bevacizumab']). Required.",
+    ),
+    disease_name: Optional[str] = Field(
+        default="",
+        description="Disease context for the comparison (e.g., 'Colorectal Cancer'). Highly recommended for meaningful comparison. Optional.",
+    ),
+    molecular_profile_name: Optional[str] = Field(
+        default="",
+        description="Molecular profile context (e.g., 'KRAS', 'EGFR L858R'). Narrows comparison to specific genetic contexts. Optional.",
+    ),
+    evidence_type: Optional[str] = Field(
+        default="",
+        description="Filter by evidence type: 'PREDICTIVE', 'DIAGNOSTIC', 'PROGNOSTIC', 'PREDISPOSING', or 'FUNCTIONAL'. Optional.",
+    ),
+    filter_strong_evidence: bool = Field(
+        default=False,
+        description="If True, only include high-quality evidence (rating > 3) in comparison.",
+    ),
+) -> str:
+    """
+    Compare multiple therapies to identify the most evidence-supported option for a clinical context.
+
+    This tool is useful for:
+    - Treatment decision support
+    - Identifying therapies with strongest evidence base
+    - Comparing therapeutic options for specific mutations
+
+    Returns:
+        str: Comprehensive comparison report with rankings, metrics, and recommendations.
+    """
+    client = CivicAPIClient()
+
+    # Input validation
+    if not therapy_names or len(therapy_names) < 2:
+        return "❌ Error: Please provide at least 2 therapies to compare."
+
+    # Convert empty strings to None
+    disease_name = None if disease_name == "" else disease_name
+    molecular_profile_name = (
+        None if molecular_profile_name == "" else molecular_profile_name
+    )
+    evidence_type = None if evidence_type == "" else evidence_type
+
+    # Retrieve evidence for each therapy
+    therapy_data = client.compare_therapies_data(
+        therapy_names=therapy_names,
+        disease_name=disease_name,
+        molecular_profile_name=molecular_profile_name,
+        evidence_type=evidence_type,
+        filter_strong_evidence=filter_strong_evidence,
+    )
+
+    # Check if all therapies have no evidence
+    if all(df.empty for df in therapy_data.values()):
+        return "🔍 No evidence found for any of the specified therapies in the given context."
+
+    # Perform comparison analysis
+    comparison_df = compare_therapy_evidence(therapy_data)
+
+    # Build report
+    report = "# 🏥 **Therapy Comparison Report**\n\n"
+
+    # Add context information
+    if disease_name or molecular_profile_name:
+        report += "**Comparison Context:**\n"
+        if disease_name:
+            report += f"- Disease: {disease_name}\n"
+        if molecular_profile_name:
+            report += f"- Molecular Profile: {molecular_profile_name}\n"
+        if evidence_type:
+            report += f"- Evidence Type: {evidence_type}\n"
+        report += "\n"
+
+    # Add comparison table
+    report += format_comparison_table(comparison_df)
+
+    # Add evidence type breakdown
+    report += format_evidence_type_breakdown(comparison_df)
+
+    # Add recommendation
+    report += format_recommendation(comparison_df)
+
+    # Add detailed evidence for top therapy
+    top_therapy = comparison_df.iloc[0]["therapy"]
+    top_therapy_df = therapy_data[top_therapy]
+
+    if not top_therapy_df.empty:
+        report += f"\n## **Detailed Evidence for Top-Ranked Therapy: {top_therapy}**\n\n"
+        report += format_top_evidence_entries(top_therapy_df, top_n=5)
+
+    # Add disclaimer
+    report += "\n⚠️ **Disclaimer:** This comparison is based on available clinical evidence and is intended for research purposes only. It is not a substitute for professional medical judgment or clinical guidelines."
+
+    return report
+
+
+@mcp.tool(
+    name="analyze_gene_variant",
+    description=(
+        "Perform comprehensive evidence-based analysis for a specific gene or variant. "
+        "Analyzes disease associations, therapy connections, evidence strength, and clinical actionability. "
+        "Identifies research gaps and provides actionability scoring to guide clinical decision-making."
+    ),
+)
+def analyze_gene_variant(
+    gene_or_variant_name: str = Field(
+        ...,
+        description="Name of the gene or variant to analyze (e.g., 'BRAF', 'EGFR L858R', 'KRAS G12C'). Required.",
+    ),
+    analysis_type: str = Field(
+        default="auto",
+        description="Type of analysis: 'gene' for gene-level analysis, 'variant' for variant-specific analysis, 'auto' to detect automatically. Default: 'auto'.",
+    ),
+    group_by: str = Field(
+        default="disease",
+        description="How to organize association analysis: 'disease' (default), 'therapy', or 'evidence_type'.",
+    ),
+    disease_context: Optional[str] = Field(
+        default="",
+        description="Optional disease context to narrow analysis (e.g., 'Lung Cancer'). If provided, analysis focuses on this disease.",
+    ),
+    filter_strong_evidence: bool = Field(
+        default=False,
+        description="If True, only include high-quality evidence (rating > 3) in analysis.",
+    ),
+) -> str:
+    """
+    Comprehensive analysis of a gene or variant including:
+    - Evidence volume and quality metrics
+    - Disease associations with strength scoring
+    - Therapy associations and effectiveness
+    - Evidence type distribution
+    - Clinical actionability assessment
+    - Research gap identification
+
+    This tool is useful for:
+    - Understanding clinical significance of variants
+    - Identifying therapeutic opportunities
+    - Assessing evidence maturity for biomarkers
+
+    Returns:
+        str: Detailed analysis report with multiple sections covering all aspects of the gene/variant.
+    """
+    client = CivicAPIClient()
+
+    # Convert empty strings to None
+    disease_context = None if disease_context == "" else disease_context
+
+    # Determine analysis type if auto
+    if analysis_type == "auto":
+        # Simple heuristic: if name contains spaces or special characters, likely a variant
+        if " " in gene_or_variant_name or any(
+            c.isdigit() for c in gene_or_variant_name
+        ):
+            analysis_type = "variant"
+        else:
+            analysis_type = "gene"
+
+    # Retrieve evidence data
+    df = client.analyze_molecular_profile_data(
+        molecular_profile_name=gene_or_variant_name,
+        disease_name=disease_context,
+        filter_strong_evidence=filter_strong_evidence,
+    )
+
+    if df.empty:
+        return f"🔍 No evidence found for {gene_or_variant_name}."
+
+    # Generate report
+    report = format_gene_variant_overview(gene_or_variant_name, df, analysis_type)
+
+    # Calculate actionability score
+    actionability = calculate_actionability_score(df)
+    report += format_actionability_score(actionability, df)
+
+    # Evidence type distribution
+    report += format_evidence_type_distribution(df)
+
+    # Association analysis
+    associations = analyze_gene_variant_associations(df, group_by=group_by)
+
+    if not associations["associations"].empty:
+        report += format_association_analysis(
+            associations["associations"],
+            group_by + "_name" if group_by != "evidence_type" else "evidence_type",
+            associations["top_associations"],
+        )
+
+    # Research gaps
+    gaps = identify_research_gaps(df)
+    report += format_research_gaps(gaps)
+
+    # Top evidence entries
+    report += format_top_evidence_entries(df, top_n=10)
+
+    # Get citations for top evidence
+    top_evidences = df.sort_values(by="evidence_rating", ascending=False).head(10)
+    if not top_evidences.empty:
+        sources = client.get_sources(top_evidences["id"].tolist())
+        report += "\n🔗 **Sources & Citations** (Top 10 Evidence):\n\n"
+        for source in sources:
+            if isinstance(source, dict):
+                report += f"• {source.get('citation', 'N/A')} - {source.get('sourceUrl', 'N/A')}\n"
+
+    # Summary insights
+    report += "\n## **Summary Insights**\n\n"
+
+    if actionability >= 70:
+        report += f"✅ **{gene_or_variant_name}** is well-characterized with strong clinical evidence. "
+        report += "This biomarker has robust evidence supporting clinical decision-making.\n\n"
+    elif actionability >= 40:
+        report += f"⚠️ **{gene_or_variant_name}** has moderate evidence support. "
+        report += "Some clinical guidance available, but additional research would strengthen confidence.\n\n"
+    else:
+        report += f"❌ **{gene_or_variant_name}** has limited evidence support. "
+        report += "Caution advised in clinical applications; more research needed.\n\n"
+
+    # Key metrics
+    report += "**Key Metrics:**\n"
+    report += f"- Evidence Items: {len(df)}\n"
+    report += f"- Average Quality: {df['evidence_rating'].mean():.2f}/5\n"
+    report += f"- Disease Contexts: {df['disease_name'].nunique()}\n"
+    report += f"- Therapeutic Options: {df['therapy_names'].nunique()}\n"
+    report += f"- Actionability Score: {actionability:.1f}/100\n"
+
+    # Disclaimer
+    report += "\n⚠️ **Disclaimer:** This analysis is based on available clinical evidence and is intended for research purposes only. It is not a substitute for professional medical advice, diagnosis, or treatment."
+
+    return report
 
 
 async def healthcheck(request: Request) -> JSONResponse:
