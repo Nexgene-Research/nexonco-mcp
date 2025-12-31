@@ -8,6 +8,8 @@ from mcp.server.fastmcp import FastMCP
 from mcp.server.sse import SseServerTransport
 from pydantic import Field
 from starlette.applications import Starlette
+from starlette.middleware import Middleware
+from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
 from starlette.responses import HTMLResponse, JSONResponse
 from starlette.routing import Mount, Route
@@ -186,6 +188,111 @@ async def healthcheck(request: Request) -> JSONResponse:
 
 async def version(request):
     return JSONResponse({"version": API_VERSION, "build": BUILD_TIMESTAMP})
+
+
+async def server_card(request: Request) -> JSONResponse:
+    """Return MCP server card metadata for Smithery discovery following SEP-1649 specification."""
+    return JSONResponse({
+        "$schema": "https://modelcontextprotocol.io/schemas/server-card.json",
+        "version": "1.0",
+        "protocolVersion": "2025-06-18",
+        "serverInfo": {
+            "name": "nexonco",
+            "title": "Nexonco Clinical Evidence Server",
+            "version": API_VERSION,
+            "description": "An advanced MCP Server for accessing and analyzing clinical evidence data, with flexible search options to support precision medicine and oncology research."
+        },
+        "author": "Nexgene AI",
+        "homepage": "https://github.com/Nexgene-Research/nexonco-mcp",
+        "documentationUrl": "https://github.com/Nexgene-Research/nexonco-mcp#readme",
+        "license": "MIT",
+        "transport": {
+            "type": "sse",
+            "endpoint": "/mcp"
+        },
+        "capabilities": {
+            "tools": {
+                "listChanged": False,
+                "definitions": [
+                    {
+                        "name": "search_clinical_evidence",
+                        "description": "Perform a flexible search for clinical evidence using combinations of filters such as disease, therapy, molecular profile, phenotype, evidence type, and direction.",
+                        "inputSchema": {
+                            "type": "object",
+                            "properties": {
+                                "disease_name": {
+                                    "type": "string",
+                                    "description": "Name of the disease to filter evidence by"
+                                },
+                                "therapy_name": {
+                                    "type": "string",
+                                    "description": "Therapy or drug name involved in the evidence"
+                                },
+                                "molecular_profile_name": {
+                                    "type": "string",
+                                    "description": "Molecular profile or gene name or variant name"
+                                },
+                                "phenotype_name": {
+                                    "type": "string",
+                                    "description": "Name of the phenotype or histological subtype"
+                                },
+                                "evidence_type": {
+                                    "type": "string",
+                                    "description": "Evidence classification: PREDICTIVE, DIAGNOSTIC, PROGNOSTIC, PREDISPOSING, or FUNCTIONAL"
+                                },
+                                "evidence_direction": {
+                                    "type": "string",
+                                    "description": "Direction of the evidence: SUPPORTS or DOES_NOT_SUPPORT"
+                                },
+                                "filter_strong_evidence": {
+                                    "type": "boolean",
+                                    "description": "If set to True, only evidence with a rating above 3 will be included",
+                                    "default": False
+                                }
+                            }
+                        }
+                    }
+                ]
+            },
+            "resources": {
+                "listChanged": False,
+                "definitions": []
+            },
+            "prompts": {
+                "listChanged": False,
+                "definitions": []
+            }
+        }
+    }, headers={
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET",
+        "Access-Control-Allow-Headers": "Content-Type",
+        "Cache-Control": "public, max-age=3600"
+    })
+
+
+async def mcp_config(request: Request) -> JSONResponse:
+    """Return MCP configuration for Smithery discovery."""
+    return JSONResponse({
+        "mcpServers": {
+            "nexonco": {
+                "url": "/mcp",
+                "transport": "sse"
+            }
+        },
+        "configSchema": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": False
+        },
+        "requiresAuth": False
+    }, headers={
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET",
+        "Access-Control-Allow-Headers": "Content-Type"
+    })
 
 
 async def homepage(request: Request) -> HTMLResponse:
@@ -774,7 +881,21 @@ def create_starlette_app(mcp_server: Server, *, debug: bool = False) -> Starlett
             Route("/health", endpoint=healthcheck),
             Route("/version", endpoint=version),
             Route("/sse", endpoint=handle_sse),
+            Route("/mcp", endpoint=handle_sse),  # Smithery-compatible endpoint
+            Route("/.well-known/mcp-config", endpoint=mcp_config),  # Smithery MCP config discovery
+            Route("/.well-known/mcp/server-card.json", endpoint=server_card),  # SEP-1649 standard endpoint
+            Route("/mcp-card", endpoint=server_card),  # Legacy MCP server card metadata endpoint
             Mount("/messages/", app=sse.handle_post_message),
+        ],
+        middleware=[
+            Middleware(
+                CORSMiddleware,
+                allow_origins=["*"],
+                allow_credentials=True,
+                allow_methods=["*"],
+                allow_headers=["*"],
+                expose_headers=["mcp-session-id", "mcp-protocol-version"],
+            )
         ],
     )
 

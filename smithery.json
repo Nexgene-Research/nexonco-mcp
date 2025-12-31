@@ -1,0 +1,56 @@
+{
+  "id": "nexonco-mcp",
+  "name": "Nexonco",
+  "description": "An advanced MCP Server for accessing and analyzing clinical evidence data, with flexible search options to support precision medicine and oncology research.",
+  "tags": [
+    "healthcare",
+    "oncology",
+    "clinical-evidence",
+    "precision-medicine",
+    "cancer",
+    "genomics",
+    "CIViC",
+    "research",
+    "medical-research"
+  ],
+  "deployment": {
+    "localOnly": false,
+    "requirements": []
+  },
+  "examples": [
+    {
+      "name": "Find Colorectal Cancer KRAS Evidence",
+      "description": "Find predictive evidence for colorectal cancer therapies involving KRAS mutations",
+      "tool": "search_clinical_evidence",
+      "input": {
+        "disease_name": "Colorectal Cancer",
+        "molecular_profile_name": "KRAS",
+        "evidence_type": "PREDICTIVE"
+      }
+    },
+    {
+      "name": "Search Imatinib Leukemia Studies",
+      "description": "Search for studies on Imatinib for leukemia treatment",
+      "tool": "search_clinical_evidence",
+      "input": {
+        "therapy_name": "Imatinib",
+        "disease_name": "Leukemia"
+      }
+    },
+    {
+      "name": "Find Pancreatic Cancer Therapies",
+      "description": "Find therapies linked to pancreatic cancer evidence",
+      "tool": "search_clinical_evidence",
+      "input": {
+        "disease_name": "Pancreatic Cancer"
+      }
+    }
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Nexgene-Research/nexonco-mcp"
+  },
+  "author": "Nexgene AI",
+  "homepage": "https://github.com/Nexgene-Research/nexonco-mcp",
+  "license": "MIT"
+}

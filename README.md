@@ -29,11 +29,14 @@ Watch full video here: [![Youtube](https://img.shields.io/badge/YouTube-red)](ht
 
 For detailed setup instructions, refer to the following documentation:
 
-- **NANDA Host Setup**  
+- **NANDA Host Setup**
   See `docs/nanda-server-setup.md` for backend configuration and local registration of the NANDA Server.
 
-- **Claude Desktop Setup**  
+- **Claude Desktop Setup**
   See `docs/claude-desktop-setup.md` for guidance on configuring the local development environment and MCP integration.
+
+- **Smithery Deployment**
+  See `docs/smithery-deployment.md` for deploying this MCP server to [Smithery](https://smithery.ai), a cloud platform for hosting MCP servers.
 
 These guides include all required steps, environment configurations, and usage notes to get up and running.
 
